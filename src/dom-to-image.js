@@ -715,18 +715,21 @@
             };
 
             function inline(get) {
-                if (util.isDataUrl(element.src)) return Promise.resolve();
+                const src = element.src || element.href && element.href.animVal
+                
+                if (util.isDataUrl(src)) return Promise.resolve();
 
-                return Promise.resolve(element.src)
+                return Promise.resolve(src)
                     .then(get || util.getAndEncode)
                     .then(function (data) {
-                        return util.dataAsUrl(data, util.mimeType(element.src));
+                        return util.dataAsUrl(data, util.mimeType(src));
                     })
                     .then(function (dataUrl) {
                         return new Promise(function (resolve, reject) {
                             element.onload = resolve;
                             element.onerror = reject;
                             element.src = dataUrl;
+                            element.setAttribute('href', dataUrl);
                         });
                     });
             }
@@ -737,7 +740,7 @@
 
             return inlineBackground(node)
                 .then(function () {
-                    if (node instanceof HTMLImageElement)
+                    if (node instanceof HTMLImageElement || node instanceof SVGImageElement)
                         return newImage(node).inline();
                     else
                         return Promise.all(
